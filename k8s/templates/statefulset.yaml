@@ -1,0 +1,171 @@
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  name: {{ template "name" . }}
+  labels:
+    app: {{ template "name" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  replicas: {{ .Values.deployment.replicacount }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  selector:
+    matchLabels:
+      app: {{ template "name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "name" . }}
+        release: "{{ .Release.Name }}"
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.service.internalPort }}
+        env:
+        - name: POSTGRES_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: {{ template "name" . }}
+              key: POSTGRES_DATABASE
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: {{ template "name" . }}
+              key: POSTGRES_HOST
+        - name: POSTGRES_USER
+          value: {{ .Values.postgresql.postgresUser }}
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "postgresql.fullname" . }}
+              key: postgres-password
+        - name: POSTGRES_PORT
+          value: "5432"
+        - name: REDIS_HOST
+          value: {{ template "redis.fullname" . }}
+        - name: REDIS_PORT
+          value: "6379"
+        - name: WEBLATE_TIME_ZONE
+          value: Europe/Berlin
+        - name: WEBLATE_DEBUG
+          valueFrom:
+            configMapKeyRef:
+              name: {{ template "name" . }}
+              key: WEBLATE_DEBUG
+        - name: WEBLATE_LOGLEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: {{ template "name" . }}
+              key: WEBLATE_LOGLEVEL
+        - name: WEBLATE_SITE_TITLE
+          valueFrom:
+            configMapKeyRef:
+              name: {{ template "name" . }}
+              key: WEBLATE_SITE_TITLE
+        - name: WEBLATE_ADMIN_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: {{ template "name" . }}
+              key: WEBLATE_ADMIN_NAME
+        - name: WEBLATE_ADMIN_EMAIL
+          valueFrom:
+            configMapKeyRef:
+              name: {{ template "name" . }}
+              key: WEBLATE_ADMIN_EMAIL
+        - name: WEBLATE_ADMIN_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: {{ template "name" . }}
+              key: WEBLATE_ADMIN_PASSWORD
+        - name: WEBLATE_SERVER_EMAIL
+          valueFrom:
+            configMapKeyRef:
+              name: {{ template "name" . }}
+              key: WEBLATE_SERVER_EMAIL
+        - name: WEBLATE_DEFAULT_FROM_EMAIL
+          valueFrom:
+            configMapKeyRef:
+              name: {{ template "name" . }}
+              key: WEBLATE_DEFAULT_FROM_EMAIL
+        - name: WEBLATE_ALLOWED_HOSTS
+          valueFrom:
+            configMapKeyRef:
+              name: {{ template "name" . }}
+              key: WEBLATE_ALLOWED_HOSTS
+        - name: WEBLATE_REGISTRATION_OPEN
+          valueFrom:
+            configMapKeyRef:
+              name: {{ template "name" . }}
+              key: WEBLATE_REGISTRATION_OPEN
+        # - name: WEBLATE_OFFLOAD_INDEXING
+        #   valueFrom:
+        #     configMapKeyRef:
+        #       name: {{ template "name" . }}
+        #       key: WEBLATE_OFFLOAD_INDEXING
+        # - name: WEBLATE_ENABLE_HTTPS
+        #   valueFrom:
+        #     configMapKeyRef:
+        #       name: {{ template "name" . }}
+        #       key: WEBLATE_ENABLE_HTTPS
+        # - name: WEBLATE_REQUIRE_LOGIN
+        #   valueFrom:
+        #     configMapKeyRef:
+        #       name: {{ template "name" . }}
+        #       key: WEBLATE_REQUIRE_LOGIN
+        {{- if .Values.email }}
+        - name: WEBLATE_EMAIL_HOST
+          value: {{ default "" .Values.email.host | quote }}
+        - name: WEBLATE_EMAIL_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "name" . }}-email
+              key: email-user
+        - name: WEBLATE_EMAIL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "name" . }}-email
+              key: email-password
+        {{- end }}
+        volumeMounts:
+        - mountPath: {{ .Values.persistence.filestore_dir }}
+          name: weblate-data
+        # livenessProbe:
+        #   failureThreshold: 5
+        #   httpGet:
+        #     path: /healthz/
+        #     port: {{ .Values.service.internalPort }}
+        #     scheme: HTTP
+        #   initialDelaySeconds: 50
+        #   periodSeconds: 10
+        #   successThreshold: 1
+        #   timeoutSeconds: 2
+        # readinessProbe:
+        #   failureThreshold: 10
+        #   httpGet:
+        #     path: /healthz/
+        #     port: {{ .Values.service.internalPort }}
+        #     scheme: HTTP
+        #   initialDelaySeconds: 50
+        #   periodSeconds: 10
+        #   successThreshold: 1
+        #   timeoutSeconds: 2
+        resources:
+{{ toYaml .Values.deployment.resources | indent 12 }}
+      volumes:
+      - name: weblate-data
+{{- if .Values.persistence.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: weblate-data
+      # annotations:
+      #   volume.beta.kubernetes.io/storage-class: {{ .Values.persistence.storageClass }}
+    spec:
+      accessModes: [ {{ .Values.persistence.accessMode | quote }} ]
+      resources:
+        requests:
+          storage: {{ .Values.persistence.size | quote }}
+{{- end }}

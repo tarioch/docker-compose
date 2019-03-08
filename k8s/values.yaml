@@ -1,0 +1,90 @@
+image:
+  repository: weblate/weblate
+  tag: latest
+  pullPolicy: Always
+
+revisionHistoryLimit: 0
+
+config:
+  WEBLATE_DEBUG: 0
+  WEBLATE_LOGLEVEL: DEBUG
+  WEBLATE_SITE_TITLE: Weblate
+  WEBLATE_ADMIN_NAME: TO_BE_REPLACED
+  WEBLATE_ADMIN_EMAIL: TO_BE_REPLACED
+  WEBLATE_ADMIN_PASSWORD: test
+  WEBLATE_SERVER_EMAIL: TO_BE_REPLACED
+  WEBLATE_DEFAULT_FROM_EMAIL: TO_BE_REPLACED
+  WEBLATE_ALLOWED_HOSTS: "*"
+  WEBLATE_REGISTRATION_OPEN: 1
+
+deployment:
+  replicacount: 1
+  # resources:
+  #   limits:
+  #     cpu: 1
+  #     memory: 2Gi
+
+service:
+  type: LoadBalancer
+  externalPort: 80
+  internalPort: 80
+
+email:
+  host: TO_BE_REPLACED
+  user: TO_BE_REPLACED
+  password: TO_BE_REPLACED
+
+persistence:
+  enabled: true
+
+  ## database data Persistent Volume Storage Class
+  ## If defined, storageClassName: <storageClass>
+  ## If set to "-", storageClassName: "", which disables dynamic provisioning
+  ## If undefined (the default) or set to null, no storageClassName spec is
+  ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+  ##   GKE, AWS & OpenStack)
+  storageClass: "standard"
+  accessMode: ReadWriteOnce
+  size: 10Gi
+
+  filestore_dir: /app/data
+
+## Configure ingress resource that allow you to access the
+## Sentry installation. Set up the URL
+## ref: http://kubernetes.io/docs/user-guide/ingress/
+##
+ingress:
+  enabled: false
+  hostname: weblate.localhost.net
+
+  ## Ingress annotations
+  ##
+  annotations: {}
+  #   kubernetes.io/ingress.class: nginx
+  #   kubernetes.io/tls-acme: 'true'
+
+  ## Ingress TLS configuration
+  ## Secrets must be manually created in the namespace
+  ##
+  tls: []
+  # tls:
+  #   - hosts:
+  #       - weblate.localhost.net
+
+postgresql:
+  persistence:
+    enabled: true
+    storageClass: "standard"
+  postgresDatabase: weblate
+  postgresUser: weblate
+  postgresPassword: weblate
+
+redis:
+  persistence:
+    enabled: true
+    storageClass: "standard"
+  # resources:
+  #   requests:
+  #     cpu: 1
+  #     memory: 250Mi
+  usePassword: false

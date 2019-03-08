@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "name" . }}
+  labels:
+    app: {{ template "name" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+data:
+  # See Weblate documentation for detailed description:
+  # https://docs.weblate.org/en/latest/admin/deployments.html#docker
+
+  # Weblate setup
+  WEBLATE_DEBUG: "{{ .Values.config.WEBLATE_DEBUG }}"
+  WEBLATE_LOGLEVEL: {{ .Values.config.WEBLATE_LOGLEVEL }}
+  WEBLATE_SITE_TITLE: {{ .Values.config.WEBLATE_SITE_TITLE }}
+  WEBLATE_ADMIN_NAME: {{ .Values.config.WEBLATE_ADMIN_NAME }}
+  WEBLATE_ADMIN_EMAIL: {{ .Values.config.WEBLATE_ADMIN_EMAIL }}
+  WEBLATE_ADMIN_PASSWORD: {{ .Values.config.WEBLATE_ADMIN_PASSWORD }}
+  WEBLATE_SERVER_EMAIL: {{ .Values.config.WEBLATE_SERVER_EMAIL }}
+  WEBLATE_DEFAULT_FROM_EMAIL: {{ .Values.config.WEBLATE_DEFAULT_FROM_EMAIL }}
+  WEBLATE_ALLOWED_HOSTS: "{{ .Values.config.WEBLATE_ALLOWED_HOSTS }}"
+  WEBLATE_REGISTRATION_OPEN: "{{ .Values.config.WEBLATE_REGISTRATION_OPEN }}"
+
+  # Extra
+  #WEBLATE_TIME_ZONE: 
+  #WEBLATE_MT_GOOGLE_KEY: 
+  #WEBLATE_SOCIAL_AUTH_GITHUB_KEY: 
+  #WEBLATE_SOCIAL_AUTH_GITHUB_SECRET: 
+  #WEBLATE_SOCIAL_AUTH_BITBUCKET_KEY: 
+  #WEBLATE_SOCIAL_AUTH_BITBUCKET_SECRET: 
+  #WEBLATE_SOCIAL_AUTH_FACEBOOK_KEY: 
+  #WEBLATE_SOCIAL_AUTH_FACEBOOK_SECRET: 
+  #WEBLATE_SOCIAL_AUTH_GOOGLE_OAUTH2_KEY: 
+  #WEBLATE_SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET: 
+
+  # WEBLATE_OFFLOAD_INDEXING: "1"
+  #WEBLATE_GOOGLE_ANALYTICS_ID: 
+  # WEBLATE_ENABLE_HTTPS: "0"
+  #WEBLATE_IP_PROXY_HEADER: HTTP_X_FORWARDED_FOR
+  # WEBLATE_REQUIRE_LOGIN: "1"
+
+  # LDAP Auth
+  #WEBLATE_AUTH_LDAP_SERVER_URI: ldap://ldap.example.org
+  #WEBLATE_AUTH_LDAP_USER_DN_TEMPLATE: uid=%(user)s,ou=People,dc=example,dc=net
+  #WEBLATE_AUTH_LDAP_USER_ATTR_MAP: first_name:name,email:mail
+  
+  # PostgreSQL setup
+  POSTGRES_DATABASE: {{ .Values.postgresql.postgresDatabase }}
+  {{- if .Values.postgresql.host }}
+  POSTGRES_HOST: {{ .Values.postgresql.host }}
+  {{- else }}
+  POSTGRES_HOST: {{ template "postgresql.fullname" . }}
+  {{- end }}
+
+  # Mail server, the server has to listen on port 587 and understand TLS
+  WEBLATE_EMAIL_HOST: {{ .Values.email.host }}
