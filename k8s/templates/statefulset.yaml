@@ -157,6 +157,8 @@ spec:
 {{ toYaml .Values.deployment.resources | indent 12 }}
       volumes:
       - name: weblate-data
+      securityContext:
+        fsGroup: 1000    
 {{- if .Values.persistence.enabled }}
   volumeClaimTemplates:
   - metadata:
