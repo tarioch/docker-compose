@@ -6,16 +6,15 @@ image:
 revisionHistoryLimit: 0
 
 config:
+  # see https://docs.weblate.org/en/latest/admin/install/docker.html#docker-environment for possible configs
   WEBLATE_DEBUG: 0
-  WEBLATE_LOGLEVEL: DEBUG
+  WEBLATE_LOGLEVEL: INFO
   WEBLATE_SITE_TITLE: Weblate
-  WEBLATE_ADMIN_NAME: TO_BE_REPLACED
-  WEBLATE_ADMIN_EMAIL: TO_BE_REPLACED
-  WEBLATE_ADMIN_PASSWORD: test
   WEBLATE_SERVER_EMAIL: TO_BE_REPLACED
   WEBLATE_DEFAULT_FROM_EMAIL: TO_BE_REPLACED
   WEBLATE_ALLOWED_HOSTS: "*"
   WEBLATE_REGISTRATION_OPEN: 1
+  WEBLATE_TIME_ZONE: "Europe/Berlin"
 
 deployment:
   replicacount: 1
@@ -25,14 +24,19 @@ deployment:
   #     memory: 2Gi
 
 service:
-  type: LoadBalancer
+  type: ClusterIP
   externalPort: 80
-  internalPort: 80
+  internalPort: 8080
+
+admin:
+  email: ""
+  user: ""
+  password: ""
 
 email:
-  host: TO_BE_REPLACED
-  user: TO_BE_REPLACED
-  password: TO_BE_REPLACED
+  host: ""
+  user: ""
+  password: ""
 
 persistence:
   enabled: true

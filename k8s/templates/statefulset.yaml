@@ -27,15 +27,13 @@ spec:
         - containerPort: {{ .Values.service.internalPort }}
         env:
         - name: POSTGRES_DATABASE
-          valueFrom:
-            configMapKeyRef:
-              name: {{ template "name" . }}
-              key: POSTGRES_DATABASE
+          value: {{ .Values.postgresql.postgresDatabase }}
         - name: POSTGRES_HOST
-          valueFrom:
-            configMapKeyRef:
-              name: {{ template "name" . }}
-              key: POSTGRES_HOST
+          {{- if .Values.postgresql.host }}
+          value: {{ .Values.postgresql.host }}
+          {{- else }}
+          value: {{ template "postgresql.fullname" . }}
+          {{- end }}
         - name: POSTGRES_USER
           value: {{ .Values.postgresql.postgresUser }}
         - name: POSTGRES_PASSWORD
@@ -49,86 +47,33 @@ spec:
           value: {{ template "redis.fullname" . }}
         - name: REDIS_PORT
           value: "6379"
-        - name: WEBLATE_TIME_ZONE
-          value: Europe/Berlin
-        - name: WEBLATE_DEBUG
-          valueFrom:
-            configMapKeyRef:
-              name: {{ template "name" . }}
-              key: WEBLATE_DEBUG
-        - name: WEBLATE_LOGLEVEL
-          valueFrom:
-            configMapKeyRef:
-              name: {{ template "name" . }}
-              key: WEBLATE_LOGLEVEL
-        - name: WEBLATE_SITE_TITLE
-          valueFrom:
-            configMapKeyRef:
-              name: {{ template "name" . }}
-              key: WEBLATE_SITE_TITLE
+        - name: WEBLATE_ADMIN_EMAIL
+          value: {{ .Values.admin.email }}
         - name: WEBLATE_ADMIN_NAME
           valueFrom:
-            configMapKeyRef:
+            secretKeyRef:
               name: {{ template "name" . }}
-              key: WEBLATE_ADMIN_NAME
-        - name: WEBLATE_ADMIN_EMAIL
-          valueFrom:
-            configMapKeyRef:
-              name: {{ template "name" . }}
-              key: WEBLATE_ADMIN_EMAIL
+              key: admin-password
         - name: WEBLATE_ADMIN_PASSWORD
           valueFrom:
-            configMapKeyRef:
+            secretKeyRef:
               name: {{ template "name" . }}
-              key: WEBLATE_ADMIN_PASSWORD
-        - name: WEBLATE_SERVER_EMAIL
-          valueFrom:
-            configMapKeyRef:
-              name: {{ template "name" . }}
-              key: WEBLATE_SERVER_EMAIL
-        - name: WEBLATE_DEFAULT_FROM_EMAIL
-          valueFrom:
-            configMapKeyRef:
-              name: {{ template "name" . }}
-              key: WEBLATE_DEFAULT_FROM_EMAIL
-        - name: WEBLATE_ALLOWED_HOSTS
-          valueFrom:
-            configMapKeyRef:
-              name: {{ template "name" . }}
-              key: WEBLATE_ALLOWED_HOSTS
-        - name: WEBLATE_REGISTRATION_OPEN
-          valueFrom:
-            configMapKeyRef:
-              name: {{ template "name" . }}
-              key: WEBLATE_REGISTRATION_OPEN
-        # - name: WEBLATE_OFFLOAD_INDEXING
-        #   valueFrom:
-        #     configMapKeyRef:
-        #       name: {{ template "name" . }}
-        #       key: WEBLATE_OFFLOAD_INDEXING
-        # - name: WEBLATE_ENABLE_HTTPS
-        #   valueFrom:
-        #     configMapKeyRef:
-        #       name: {{ template "name" . }}
-        #       key: WEBLATE_ENABLE_HTTPS
-        # - name: WEBLATE_REQUIRE_LOGIN
-        #   valueFrom:
-        #     configMapKeyRef:
-        #       name: {{ template "name" . }}
-        #       key: WEBLATE_REQUIRE_LOGIN
-        {{- if .Values.email }}
+              key: admin-password
         - name: WEBLATE_EMAIL_HOST
-          value: {{ default "" .Values.email.host | quote }}
+          value: {{ .Values.email.host }}
         - name: WEBLATE_EMAIL_USER
           valueFrom:
             secretKeyRef:
-              name: {{ template "name" . }}-email
+              name: {{ template "name" . }}
               key: email-user
         - name: WEBLATE_EMAIL_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ template "name" . }}-email
+              name: {{ template "name" . }}
               key: email-password
+        {{- range $key, $value := .Values.config }}
+        - name: {{ $key }}
+          value: "{{ $value }}"
         {{- end }}
         volumeMounts:
         - mountPath: {{ .Values.persistence.filestore_dir }}
@@ -158,15 +103,14 @@ spec:
       volumes:
       - name: weblate-data
       securityContext:
-        fsGroup: 1000    
+        fsGroup: 1000
 {{- if .Values.persistence.enabled }}
   volumeClaimTemplates:
   - metadata:
       name: weblate-data
-      # annotations:
-      #   volume.beta.kubernetes.io/storage-class: {{ .Values.persistence.storageClass }}
     spec:
       accessModes: [ {{ .Values.persistence.accessMode | quote }} ]
+      storageClassName: "{{ .Values.persistence.storageClass }}"
       resources:
         requests:
           storage: {{ .Values.persistence.size | quote }}
